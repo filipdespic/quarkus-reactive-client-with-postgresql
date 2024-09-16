@@ -6,9 +6,12 @@ import io.vertx.mutiny.pgclient.PgPool;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
+
+import java.net.URI;
 
 @Path("movies")
 public class MovieResource {
@@ -34,6 +37,15 @@ public class MovieResource {
                 .transform(movie -> movie != null ? Response.ok(movie) : Response.status(Response.Status.NOT_FOUND))
                 .onItem()
                 .transform(Response.ResponseBuilder::build);
+    }
+
+    @POST
+    public Uni<Response> create(Movie movie) {
+        return Movie.save(client, movie.getTitle())
+                .onItem()
+                .transform(id -> URI.create("/movies/" + id))
+                .onItem()
+                .transform(uri -> Response.created(uri).build());
     }
 
     private void initdb() {
